@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Strength Checker</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #f6f9fc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -8px rgba(0, 20, 30, 0.2);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 1.75rem;
+      font-weight: 500;
+      font-size: 1.8rem;
+      color: #0b2b3c;
+      letter-spacing: -0.02em;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    label {
+      font-weight: 500;
+      color: #1d4f64;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
+    }
+    .password-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .input-wrap {
+      position: relative;
+      flex: 1 1 200px;
+      display: flex;
+      align-items: center;
+    }
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 0.9rem 3rem 0.9rem 1.2rem;
+      font-size: 1rem;
+      border: 2px solid #cbdbe6;
+      border-radius: 2rem;
+      background: #ffffff;
+      transition: border 0.15s, box-shadow 0.15s;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      letter-spacing: 0.5px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    input[type="password"]:focus,
+    input[type="text"]:focus {
+      border-color: #2b7a8c;
+      box-shadow: 0 0 0 4px rgba(43, 122, 140, 0.15);
+    }
+    .toggle-password {
+      position: absolute;
+      right: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #527a8c;
+      transition: background 0.15s, color 0.15s;
+      line-height: 0;
+    }
+    .toggle-password:hover {
+      background: #eef6fa;
+      color: #0b2b3c;
+    }
+    .toggle-password:focus-visible {
+      outline: 2px solid #2b7a8c;
+      outline-offset: 2px;
+    }
+    .toggle-password svg {
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+    }
+    #strength-indicator {
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 2rem;
+      background: #edf4f8;
+      display: inline-block;
+      min-width: 130px;
+      text-align: center;
+      letter-spacing: 0.2px;
+      transition: background 0.2s, color 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Password strength</h2>
+
+    <div class="field-group">
+      <label for="password">Enter your password</label>
+      <div class="password-row">
+        <div class="input-wrap">
+          <input type="password" id="password" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="toggle-password" id="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+            <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </button>
+        </div>
+        <span id="strength-indicator" aria-live="polite"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const passwordInput = document.getElementById('password');
+      const strengthIndicator = document.getElementById('strength-indicator');
+      const toggleBtn = document.getElementById('toggle-password');
+      const iconEye = document.getElementById('icon-eye');
+      const iconEyeOff = document.getElementById('icon-eye-off');
+
+      function isStrongPassword(password) {
+        if (!password || typeof password !== 'string') return false;
+
+        const lengthValid = password.length >= 8;
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+
+        return lengthValid && hasUppercase && hasNumber;
+      }
+
+      function updateStrengthIndicator() {
+        const currentPassword = passwordInput.value;
+
+        if (isStrongPassword(currentPassword)) {
+          strengthIndicator.textContent = 'Strong Password';
+          strengthIndicator.style.color = '#0f7b3a';
+          strengthIndicator.style.backgroundColor = '#e3f5e9';
+        } else {
+          strengthIndicator.textContent = 'Weak Password';
+          strengthIndicator.style.color = '#b81b1b';
+          strengthIndicator.style.backgroundColor = '#ffe9e9';
+        }
+      }
+
+      function togglePasswordVisibility() {
+        const isCurrentlyPassword = passwordInput.type === 'password';
+
+        if (isCurrentlyPassword) {
+          passwordInput.type = 'text';
+          toggleBtn.setAttribute('aria-label', 'Hide password');
+          toggleBtn.setAttribute('aria-pressed', 'true');
+          toggleBtn.setAttribute('title', 'Hide password');
+          iconEye.style.display = 'none';
+          iconEyeOff.style.display = 'block';
+        } else {
+          passwordInput.type = 'password';
+          toggleBtn.setAttribute('aria-label', 'Show password');
+          toggleBtn.setAttribute('aria-pressed', 'false');
+          toggleBtn.setAttribute('title', 'Show password');
+          iconEye.style.display = 'block';
+          iconEyeOff.style.display = 'none';
+        }
+
+        passwordInput.focus();
+      }
+
+      passwordInput.addEventListener('keyup', updateStrengthIndicator);
+      passwordInput.addEventListener('input', updateStrengthIndicator);
+
+      toggleBtn.addEventListener('click', togglePasswordVisibility);
+
+      window.addEventListener('load', function() {
+        updateStrengthIndicator();
+        setTimeout(updateStrengthIndicator, 100);
+      });
+
+      (function selfCheck() {
+        const testCases = [
+          { pwd: '', expected: false },
+          { pwd: 'abc', expected: false },
+          { pwd: 'abcdefgh', expected: false },
+          { pwd: 'Abcdefgh', expected: false },
+          { pwd: '12345678', expected: false },
+          { pwd: 'Abc123', expected: false },
+          { pwd: 'Abcdefg1', expected: true },
+          { pwd: 'A1b2C3d4', expected: true },
+          { pwd: 'P@ssw0rd', expected: true },
+          { pwd: 'P@ssword', expected: false },
+          { pwd: 'p@ssw0rd', expected: false },
+        ];
+
+        let allPass = true;
+        testCases.forEach((tc) => {
+          const result = isStrongPassword(tc.pwd);
+          if (result !== tc.expected) allPass = false;
+        });
+        if (!allPass) console.warn('⚠️ Self-check failed.');
+      })();
+    })();
+  </script>
+</body>
+</html>
